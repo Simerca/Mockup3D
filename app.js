@@ -172,8 +172,8 @@ class PhoneMockupApp {
     init() {
         // Scene
         this.scene = new THREE.Scene();
-        // Keep background for editing, will be removed during export
-        this.scene.background = new THREE.Color(0x1e293b);
+        // No background for transparency
+        this.scene.background = null;
 
         // Camera
         const canvas = document.getElementById('canvas3d');
@@ -186,11 +186,13 @@ class PhoneMockupApp {
             canvas,
             antialias: true,
             preserveDrawingBuffer: true,
-            alpha: true // Enable transparency
+            alpha: true, // Enable transparency
+            premultipliedAlpha: false // Disable premultiplied alpha for proper PNG export
         });
         this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
-        this.renderer.setClearColor(0x000000, 0); // Clear with transparent
+        this.renderer.setClearColor(0x000000, 0); // Clear with transparent (alpha = 0)
+        this.renderer.autoClear = true;
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
@@ -965,42 +967,50 @@ class PhoneMockupApp {
     exportToPNG() {
         const quality = parseInt(document.getElementById('exportQuality').value);
         
-        // Store current state
-        const currentWidth = this.renderer.domElement.width;
-        const currentHeight = this.renderer.domElement.height;
-        const currentPixelRatio = this.renderer.getPixelRatio();
-        const currentBg = this.scene.background;
-        
-        // Set transparent background
-        this.scene.background = null;
+        // Get current canvas dimensions
+        const canvas = this.renderer.domElement;
+        const currentWidth = canvas.clientWidth;
+        const currentHeight = canvas.clientHeight;
         
         // Calculate export dimensions
         const exportWidth = currentWidth * quality;
         const exportHeight = currentHeight * quality;
         
-        // Temporarily adjust renderer
-        this.renderer.setPixelRatio(1); // Set to 1 to avoid issues
-        this.renderer.setSize(exportWidth, exportHeight, false); // false = don't update style
+        console.log('Exporting:', exportWidth, 'x', exportHeight);
         
-        // Update camera aspect ratio
-        this.camera.aspect = exportWidth / exportHeight;
-        this.camera.updateProjectionMatrix();
+        // Create an off-screen canvas for export
+        const exportCanvas = document.createElement('canvas');
+        exportCanvas.width = exportWidth;
+        exportCanvas.height = exportHeight;
         
-        // Render
-        this.renderer.render(this.scene, this.camera);
+        // Create a temporary renderer for export
+        const exportRenderer = new THREE.WebGLRenderer({
+            canvas: exportCanvas,
+            antialias: true,
+            alpha: true,
+            premultipliedAlpha: false,
+            preserveDrawingBuffer: true
+        });
+        
+        exportRenderer.setSize(exportWidth, exportHeight);
+        exportRenderer.setClearColor(0x000000, 0); // Transparent
+        exportRenderer.toneMapping = THREE.ACESFilmicToneMapping;
+        exportRenderer.toneMappingExposure = 1;
+        exportRenderer.outputColorSpace = THREE.SRGBColorSpace;
+        
+        // Clone camera to avoid affecting the main view
+        const exportCamera = this.camera.clone();
+        exportCamera.aspect = currentWidth / currentHeight; // Same aspect as display
+        exportCamera.updateProjectionMatrix();
+        
+        // Render to off-screen canvas
+        exportRenderer.render(this.scene, exportCamera);
         
         // Get the image
-        const dataUrl = this.renderer.domElement.toDataURL('image/png');
+        const dataUrl = exportCanvas.toDataURL('image/png');
         
-        // Restore everything
-        this.scene.background = currentBg;
-        this.renderer.setPixelRatio(currentPixelRatio);
-        this.renderer.setSize(currentWidth, currentHeight, false);
-        this.camera.aspect = currentWidth / currentHeight;
-        this.camera.updateProjectionMatrix();
-        
-        // Force a render to restore the view
-        this.renderer.render(this.scene, this.camera);
+        // Clean up
+        exportRenderer.dispose();
         
         // Download
         const link = document.createElement('a');
@@ -1008,7 +1018,7 @@ class PhoneMockupApp {
         link.href = dataUrl;
         link.click();
         
-        console.log('✓ PNG exported with transparent background');
+        console.log('✓ PNG exported with transparent background at', exportWidth, 'x', exportHeight);
     }
 
     onWindowResize() {
