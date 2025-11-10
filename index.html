@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mockup 3D - Générateur de Screenshots</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>📱 Mockup 3D Phone</h1>
+            <p>Créez des mockups 3D professionnels avec vos captures d'écran</p>
+        </header>
+
+        <div class="main-layout">
+            <!-- Canvas 3D -->
+            <div class="canvas-container">
+                <canvas id="canvas3d"></canvas>
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                    <p>Chargement du modèle 3D...</p>
+                </div>
+            </div>
+
+            <!-- Panneau de contrôle -->
+            <div class="controls-panel">
+                <div class="control-section">
+                    <h3>📸 Capture d'écran</h3>
+                    
+                    <!-- Manual screen selection -->
+                    <div class="mesh-selector" id="meshSelector" style="display: none;">
+                        <label>
+                            <span>Sélectionner l'écran manuellement</span>
+                        </label>
+                        <select id="screenMeshSelect">
+                            <option value="">Détection automatique</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Mesh visibility toggle -->
+                    <div class="mesh-visibility" id="meshVisibility" style="display: none;">
+                        <label>
+                            <span>Activer/Désactiver les objets</span>
+                        </label>
+                        <div class="mesh-list" id="meshList"></div>
+                    </div>
+                    
+                    <div class="upload-area" id="uploadArea">
+                        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <p>Glissez votre image ici</p>
+                        <span>ou</span>
+                        <button class="btn-upload" id="btnBrowse">Parcourir</button>
+                        <input type="file" id="imageInput" accept="image/*" hidden>
+                    </div>
+                    <div class="image-preview" id="imagePreview" style="display: none;">
+                        <img id="previewImg" alt="Preview">
+                        <button class="btn-remove" id="btnRemove">×</button>
+                    </div>
+                </div>
+
+                <div class="control-section" id="textureControls" style="display: none;">
+                    <h3>🖼️ Ajustements de l'image</h3>
+                    
+                    <div class="slider-group">
+                        <label>
+                            <span>Rotation texture</span>
+                            <span class="value" id="textureRotValue">180°</span>
+                        </label>
+                        <input type="range" id="textureRot" min="0" max="360" value="180" step="1">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>
+                            <span>Échelle X</span>
+                            <span class="value" id="textureScaleXValue">-1.0</span>
+                        </label>
+                        <input type="range" id="textureScaleX" min="-10" max="10" value="-1" step="0.05">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>
+                            <span>Échelle Y</span>
+                            <span class="value" id="textureScaleYValue">1.0</span>
+                        </label>
+                        <input type="range" id="textureScaleY" min="-10" max="10" value="1" step="0.05">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>
+                            <span>Position X</span>
+                            <span class="value" id="textureOffsetXValue">0.0</span>
+                        </label>
+                        <input type="range" id="textureOffsetX" min="-1" max="1" value="0" step="0.01">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>
+                            <span>Position Y</span>
+                            <span class="value" id="textureOffsetYValue">0.0</span>
+                        </label>
+                        <input type="range" id="textureOffsetY" min="-1" max="1" value="0" step="0.01">
+                    </div>
+
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" id="textureFlipY">
+                            <span>Retourner verticalement</span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <h3>🔄 Orientation du téléphone</h3>
+                    
+                    <div class="slider-group">
+                        <label>
+                            <span>Rotation X</span>
+                            <span class="value" id="rotXValue">0°</span>
+                        </label>
+                        <input type="range" id="rotX" min="-180" max="180" value="0" step="1">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>
+                            <span>Rotation Y</span>
+                            <span class="value" id="rotYValue">0°</span>
+                        </label>
+                        <input type="range" id="rotY" min="-180" max="180" value="30" step="1">
+                    </div>
+
+                    <div class="slider-group">
+                        <label>
+                            <span>Rotation Z</span>
+                            <span class="value" id="rotZValue">0°</span>
+                        </label>
+                        <input type="range" id="rotZ" min="-180" max="180" value="0" step="1">
+                    </div>
+
+                    <button class="btn-reset" id="btnReset">Réinitialiser la vue</button>
+                </div>
+
+                <div class="control-section">
+                    <h3>🎨 Rendu</h3>
+                    
+                    <div class="slider-group">
+                        <label>
+                            <span>Zoom</span>
+                            <span class="value" id="zoomValue">1.0x</span>
+                        </label>
+                        <input type="range" id="zoom" min="0.5" max="3" value="1" step="0.1">
+                    </div>
+
+                    <div class="quality-select">
+                        <label>Qualité d'export</label>
+                        <select id="exportQuality">
+                            <option value="1">Standard (1x)</option>
+                            <option value="2" selected>HD (2x)</option>
+                            <option value="3">Ultra HD (3x)</option>
+                            <option value="4">4K (4x)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="control-section">
+                    <button class="btn-export" id="btnExport">
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Exporter en PNG
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Image Editor Modal -->
+    <div class="image-editor-modal" id="imageEditorModal">
+        <div class="editor-content">
+            <div class="editor-header">
+                <h2>📐 Ajuster l'image</h2>
+                <button class="btn-close-editor" id="btnCloseEditor">×</button>
+            </div>
+            
+            <div class="editor-main">
+                <div class="canvas-wrapper">
+                    <canvas id="editorCanvas"></canvas>
+                </div>
+                
+                <div class="editor-controls">
+                    <div class="editor-control-group">
+                        <label>
+                            <span>🔄 Rotation</span>
+                            <span class="value" id="editorRotValue">270°</span>
+                        </label>
+                        <input type="range" id="editorRot" min="0" max="360" value="270" step="1">
+                    </div>
+
+                    <div class="editor-control-group">
+                        <label>
+                            <span>🔍 Échelle</span>
+                            <span class="value" id="editorScaleValue">1.0</span>
+                        </label>
+                        <input type="range" id="editorScale" min="0.1" max="5" value="1" step="0.01">
+                    </div>
+
+                    <div class="editor-control-group">
+                        <label>
+                            <span>↔️ Position X</span>
+                            <span class="value" id="editorPosXValue">0</span>
+                        </label>
+                        <input type="range" id="editorPosX" min="-500" max="500" value="0" step="1">
+                    </div>
+
+                    <div class="editor-control-group">
+                        <label>
+                            <span>↕️ Position Y</span>
+                            <span class="value" id="editorPosYValue">0</span>
+                        </label>
+                        <input type="range" id="editorPosY" min="-500" max="500" value="0" step="1">
+                    </div>
+
+                    <button class="btn-reset-editor" id="btnResetEditor">Réinitialiser</button>
+                </div>
+            </div>
+            
+            <div class="editor-footer">
+                <button class="btn-cancel" id="btnCancelEditor">Annuler</button>
+                <button class="btn-apply" id="btnApplyEditor">Appliquer au téléphone</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
+    <script type="module" src="app.js"></script>
+</body>
+</html>
+
