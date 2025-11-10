@@ -193,8 +193,7 @@ class PhoneMockupApp {
         this.renderer.setPixelRatio(window.devicePixelRatio);
         this.renderer.setClearColor(0x000000, 0); // Clear with transparent (alpha = 0)
         this.renderer.autoClear = true;
-        this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
-        this.renderer.toneMappingExposure = 1;
+        this.renderer.toneMapping = THREE.NoToneMapping; // Disable tone mapping for accurate colors
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
 
         // Controls
@@ -204,21 +203,26 @@ class PhoneMockupApp {
         this.controls.minDistance = 3;
         this.controls.maxDistance = 15;
 
-        // Lights
-        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        // Lights - increased intensity for brighter renders
+        const ambientLight = new THREE.AmbientLight(0xffffff, 1.0); // Increased from 0.6
         this.scene.add(ambientLight);
 
-        const mainLight = new THREE.DirectionalLight(0xffffff, 1.2);
+        const mainLight = new THREE.DirectionalLight(0xffffff, 1.5); // Increased from 1.2
         mainLight.position.set(5, 5, 5);
         this.scene.add(mainLight);
 
-        const fillLight = new THREE.DirectionalLight(0xffffff, 0.5);
+        const fillLight = new THREE.DirectionalLight(0xffffff, 0.8); // Increased from 0.5
         fillLight.position.set(-5, 0, -5);
         this.scene.add(fillLight);
 
-        const backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+        const backLight = new THREE.DirectionalLight(0xffffff, 0.5); // Increased from 0.3
         backLight.position.set(0, -5, -5);
         this.scene.add(backLight);
+        
+        // Add front light for screen visibility
+        const frontLight = new THREE.DirectionalLight(0xffffff, 0.7);
+        frontLight.position.set(0, 0, 10);
+        this.scene.add(frontLight);
 
         // Load 3D model
         this.loadPhoneModel();
@@ -610,14 +614,12 @@ class PhoneMockupApp {
                 texture.repeat.set(-1, 1); // Negative X to flip horizontally
                 texture.offset.set(0, 0);
                 this.currentTexture = texture;
-                const mat = new THREE.MeshStandardMaterial({
+                
+                // Use MeshBasicMaterial for screen_01 - no lighting, just pure texture
+                const mat = new THREE.MeshBasicMaterial({
                     map: texture,
-                    emissive: 0xffffff,
-                    emissiveMap: texture,
-                    emissiveIntensity: 1.0,
-                    metalness: 0,
-                    roughness: 0.3,
-                    side: THREE.DoubleSide
+                    side: THREE.DoubleSide,
+                    transparent: false
                 });
                 if (this.screenMesh.material) this.screenMesh.material.dispose();
                 this.screenMesh.material = mat;
@@ -698,15 +700,11 @@ class PhoneMockupApp {
             this.screenMesh.material.dispose();
         }
         
-        // Create new material with processed texture
-        const screenMaterial = new THREE.MeshStandardMaterial({
+        // Create new material with processed texture - MeshBasicMaterial for pure colors
+        const screenMaterial = new THREE.MeshBasicMaterial({
             map: texture,
-            emissive: 0xffffff,
-            emissiveMap: texture,
-            emissiveIntensity: 1.0,
-            metalness: 0,
-            roughness: 0.3,
-            side: THREE.DoubleSide
+            side: THREE.DoubleSide,
+            transparent: false
         });
         
         this.screenMesh.material = screenMaterial;
@@ -994,8 +992,7 @@ class PhoneMockupApp {
         
         exportRenderer.setSize(exportWidth, exportHeight);
         exportRenderer.setClearColor(0x000000, 0); // Transparent
-        exportRenderer.toneMapping = THREE.ACESFilmicToneMapping;
-        exportRenderer.toneMappingExposure = 1;
+        exportRenderer.toneMapping = THREE.NoToneMapping; // No tone mapping for accurate colors
         exportRenderer.outputColorSpace = THREE.SRGBColorSpace;
         
         // Clone camera to avoid affecting the main view
