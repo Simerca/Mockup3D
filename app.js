@@ -172,6 +172,7 @@ class PhoneMockupApp {
     init() {
         // Scene
         this.scene = new THREE.Scene();
+        // Keep background for editing, will be removed during export
         this.scene.background = new THREE.Color(0x1e293b);
 
         // Camera
