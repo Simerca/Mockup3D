@@ -190,6 +190,7 @@ class PhoneMockupApp {
         });
         this.renderer.setSize(canvas.clientWidth, canvas.clientHeight);
         this.renderer.setPixelRatio(window.devicePixelRatio);
+        this.renderer.setClearColor(0x000000, 0); // Clear with transparent
         this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
         this.renderer.toneMappingExposure = 1;
         this.renderer.outputColorSpace = THREE.SRGBColorSpace;
